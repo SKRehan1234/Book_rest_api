@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>📚 Book Management System</h1>
+    <p>Find Books that you needed.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Add a New Book</h2>
+
+      <form id="bookForm">
+        <input type="text" id="title" placeholder="Enter book title" required>
+        <input type="text" id="author" placeholder="Enter author name" required>
+        <button type="submit">Add Book</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Book List</h2>
+        <button onclick="loadBooks()">Refresh</button>
+      </div>
+
+      <div id="bookList">
+        <p>Loading books...</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Book REST API &copy; 2026</p>
+  </footer>
+
+  <script>
+    const bookForm = document.getElementById("bookForm");
+    const bookList = document.getElementById("bookList");
+
+    async function loadBooks() {
+      try {
+        const response = await fetch("/books");
+        const books = await response.json();
+
+        bookList.innerHTML = "";
+
+        if (books.length === 0) {
+          bookList.innerHTML = "<p>No books available.</p>";
+          return;
+        }
+
+        books.forEach(book => {
+          const bookElement = document.createElement("div");
+          bookElement.className = "book";
+
+          bookElement.innerHTML = `
+            <div>
+              <h3>${book.title}</h3>
+              <p>Author: ${book.author}</p>
+            </div>
+            <button class="delete-btn" onclick="deleteBook(${book.id})">
+              Delete
+            </button>
+          `;
+
+          bookList.appendChild(bookElement);
+        });
+      } catch (error) {
+        bookList.innerHTML = "<p>Unable to load books.</p>";
+      }
+    }
+
+    bookForm.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const title = document.getElementById("title").value;
+      const author = document.getElementById("author").value;
+
+      await fetch("/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ title, author })
+      });
+
+      bookForm.reset();
+      loadBooks();
+    });
+
+    async function deleteBook(id) {
+      if (!confirm("Are you sure you want to delete this book?")) return;
+
+      await fetch(`/books/${id}`, {
+        method: "DELETE"
+      });
+
+      loadBooks();
+    }
+
+    loadBooks();
+  </script>
+</body>
+</html>
